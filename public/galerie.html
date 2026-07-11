@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Galerie - Élodie & Émilie</title>
+
+<style>
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #F8F5F4;
+  color: #1F3A5F;
+  text-align: center;
+}
+
+header {
+  padding: 40px 20px;
+}
+
+h1 {
+  color: #C78C9A;
+  font-size: 40px;
+}
+
+p {
+  font-size: 18px;
+}
+
+.galerie {
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 30px;
+
+}
+
+.galerie img {
+
+  width: 100%;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.4s;
+
+}
+
+.galerie img:hover {
+
+  transform: scale(1.05);
+
+}
+
+
+/* fenêtre image en grand */
+
+#zoom {
+
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.8);
+align-items:center;
+justify-content:center;
+
+}
+
+#zoom img {
+
+max-width:90%;
+max-height:90%;
+border-radius:20px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<header>
+
+<h1>💍 Élodie & Émilie</h1>
+
+<p>
+Nos plus beaux souvenirs ❤️
+</p>
+
+</header>
+
+
+<div class="galerie" id="photos"></div>
+
+
+<div id="zoom" onclick="fermer()">
+<img id="imageZoom">
+</div>
+
+
+<script>
+
+fetch('/liste-photos')
+
+.then(response => response.json())
+
+.then(photos => {
+
+const galerie = document.getElementById('photos');
+
+
+photos.forEach(photo => {
+
+galerie.innerHTML += `
+
+<img 
+src="/uploads/${photo}" 
+onclick="ouvrir('/uploads/${photo}')">
+
+`;
+
+});
+
+});
+
+
+function ouvrir(image){
+
+document.getElementById("imageZoom").src=image;
+
+document.getElementById("zoom").style.display="flex";
+
+}
+
+
+function fermer(){
+
+document.getElementById("zoom").style.display="none";
+
+}
+
+</script>
+
+
+</body>
+
+</html>
