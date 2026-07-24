@@ -107,44 +107,45 @@ Nos plus beaux souvenirs ❤️
 
 <script>
 
-fetch('/liste-photos')
+const idMariage = "elodie-emilie";
+
+fetch(`/api/mariage/${idMariage}/photos`)
 
 .then(response => response.json())
 
 .then(photos => {
 
-const galerie = document.getElementById('photos');
+    const galerie = document.getElementById('photos');
 
+    photos.forEach(photo => {
 
-photos.forEach(photo => {
+        galerie.innerHTML += `
 
-galerie.innerHTML += `
+        <img
+        src="${photo.secure_url}"
+        onclick="ouvrir('${photo.secure_url}')">
 
-<img 
-src="/uploads/${photo}" 
-onclick="ouvrir('/uploads/${photo}')">
+        `;
 
-`;
-
-});
+    });
 
 });
 
 
 function ouvrir(image){
 
-document.getElementById("imageZoom").src=image;
-
-document.getElementById("zoom").style.display="flex";
+    document.getElementById("imageZoom").src = image;
+    document.getElementById("zoom").style.display = "flex";
 
 }
 
 
 function fermer(){
 
-document.getElementById("zoom").style.display="none";
+    document.getElementById("zoom").style.display = "none";
 
 }
+
 
 </script>
 

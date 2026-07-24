@@ -1,0 +1,368 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title id="titre-page">Cargement...</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#F8F5F4;
+    text-align:center;
+    color:#1F3A5F;
+}
+
+header{
+    padding:60px 20px;
+}
+
+h1{
+    font-size:50px;
+    margin-bottom:10px;
+}
+
+h2{
+    color:#C78C9A;
+    font-weight:normal;
+}
+
+p{
+    font-size:20px;
+}
+
+form{
+    margin-top:40px;
+}
+
+input[type=file]{
+    padding:15px;
+}
+
+button{
+
+    background:#1F3A5F;
+    color:white;
+    border:none;
+    padding:15px 35px;
+    border-radius:30px;
+    font-size:18px;
+    cursor:pointer;
+
+}
+
+button:hover{
+
+    background:#C78C9A;
+
+}
+
+footer{
+
+margin-top:60px;
+padding:20px;
+
+}
+.petal {
+  position: fixed;
+  top: -20px;
+  font-size: 25px; 
+  animation: fall linear infinite;
+  opacity: 0.8;
+}
+@keyframes fall {
+  0% {
+    transform: tranlateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+  }
+}
+body {
+
+    background-image: linear-gradient(
+
+      rgba(255,255,255,0.75),
+
+      rgba(255,255,255,0.75)
+
+    ), url("fond.jpg");
+
+    background-size: cover;
+
+    background-position: center;
+
+    min-height: 100vh;
+
+}
+
+.initiales {
+
+    font-size: 90px;
+
+    color: #C78C9A;
+
+    font-family: "Times New Roman", serif;
+
+    animation: apparition 2s ease;
+
+}
+
+header {
+
+    animation: apparition 2s ease;
+
+}
+
+@keyframes apparition {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(30px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+button {
+    transition: 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+button:hover {
+    transform: translateY(-3px);
+}
+
+.envoi {
+    margin-top:20px;
+}
+
+.message-envoi {
+    display:none;
+    color:#C78C9A;
+    font-size:18px;
+    margin-top:20px;
+}
+.compteur {
+    margin-top:40px;
+}
+
+.compteur h3 {
+    color:#C78C9A;
+    font-size:25px;
+}
+
+#countdown {
+    font-size:30px;
+    font-weight:bold;
+    color:#1F3A5F;
+}
+
+
+.histoire {
+
+    max-width:700px;
+    margin:50px auto;
+    padding:30px;
+    background:rgba(255,255,255,0.7);
+    border-radius:25px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+
+}
+
+.histoire h2 {
+
+    color:#C78C9A;
+    font-size:35px;
+
+}
+
+.histoire p {
+
+    line-height:1.7;
+    font-size:18px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+<div class="petal" style="left:10%; animation-duration:8s;">🌿</div>
+<div class="petal" style="left:30%; animation-duration:10s;">🌸</div>
+<div class="petal" style="left:50%; animation-duration:7s;">🌿</div>
+<div class="petal" style="left:70%; animation-duration:12s;">🌸</div>
+<div class="petal" style="left:90%; animation-duration:9s;">🌿</div>
+
+<header>
+
+<div class="initiales" id="initiales">
+  ... 
+</div>
+
+<section class="histoire">
+
+<h2>❤️ Notre histoire</h2>
+
+<p>
+Deux chemins qui se rencontrent,
+deux histoires qui s’écrivent,
+et une aventure que nous continuons ensemble.
+</p>
+
+<p>
+Merci d’être présents à nos côtés
+pour partager cette journée unique
+et créer avec nous de nouveaux souvenirs.
+</p>
+
+</section>
+
+<h1 id="prenoms">💍 Chargement ... </h1>
+
+<h2 id="date">Chargement ...</h2>
+
+<div class="compteur">
+
+<h3>Plus que...</h3>
+
+<div id="countdown"></div>
+
+</div>
+
+<p>
+
+Merci de partager avec nous les plus beaux souvenirs de cette journée ❤️
+
+</p>
+
+<form action="/upload" method="POST" enctype="multipart/form-data">
+
+<input type="file" id="photos" name="photos" multiple>
+
+<div id="preview"></div>
+
+<br><br>
+
+<button type="submit" onclick="envoyer()">
+📸 Envoyer mes photos
+</button>
+
+<div class="message-envoi" id="message">
+⏳ Envoi de vos souvenirs...
+</div>
+
+</form>
+
+<br>
+
+<a href="/galerie.html">
+Voir la galerie 📷
+</a>
+
+</header>
+
+<footer>
+
+Avec tout notre amour ❤️
+
+</footer>
+<script>
+const input = document.getElementById('photos');
+const preview = document.getElementById('preview');
+
+input.addEventListener('change', function() {
+  preview.innerHTML = "";
+
+  Array.from(this.files).forEach(file => {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.style.width = "120px";
+    img.style.margin = "10px";
+    img.style.borderRadius = "15px";
+
+    preview.appendChild(img);
+  });
+});
+</script>
+
+<script>
+function envoyer() {
+  document.getElementById("message").style.display = "block";
+}
+</script>
+
+<script>
+
+let dateMariage;
+fetch('/api/mariage') 
+    .then(response => response.json())
+    .then(mariage => {
+
+        dateMariage = new Date(mariage.date + " 14:30:00").getTime();
+    });
+
+const timer = setInterval(function(){
+
+const maintenant = new Date().getTime();
+
+const distance = dateMariage - maintenant;
+
+
+const jours = Math.floor(distance / (1000*60*60*24));
+
+const heures = Math.floor(
+(distance % (1000*60*60*24)) / (1000*60*60)
+);
+
+const minutes = Math.floor(
+(distance % (1000*60*60)) / (1000*60)
+);
+
+const secondes = Math.floor(
+(distance % (1000*60)) / 1000
+);
+
+
+document.getElementById("countdown").innerHTML =
+jours + " jours • " +
+heures + " h • " +
+minutes + " min • " +
+secondes + " sec";
+
+
+},1000);
+
+</script>
+
+<script>
+    fetch('/api/mariage')
+        .then(response => response.json())
+        .then(mariage => {
+            document.getElementById('titre-page').textContent = mariage.prenoms;
+            document.getElementById('prenoms').textContent = "💍" + mariage.prenoms;
+            document.getElementById('date').textContent = mariage.date;
+            document.getElementById('initiales').textContent = 
+                mariage.prenoms.split('&')[0].trim()[0] +
+                "&" +
+                mariage.prenoms.split('&')[1].trim()[0];
+
+       });
+</script>
+
+</body>
+</html>

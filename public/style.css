@@ -1,0 +1,294 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: #1F3A5F;
+
+    background-image:
+    linear-gradient(
+        rgba(255,255,255,0.75),
+        rgba(255,255,255,0.75)
+    ),
+    url("fond.jpg");
+
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+}
+
+
+header {
+    padding: 60px 20px;
+}
+
+
+.initiales {
+
+    font-size: 90px;
+    color: #C78C9A;
+    font-family: "Times New Roman", serif;
+
+    animation: apparition 2s ease;
+
+}
+
+
+h1 {
+
+    font-size: 50px;
+    margin-bottom: 10px;
+
+}
+
+
+h2 {
+
+    color: #C78C9A;
+    font-weight: normal;
+
+}
+
+
+p {
+
+    font-size: 18px;
+    line-height: 1.7;
+
+}
+
+
+.histoire {
+
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 30px;
+
+    background: rgba(255,255,255,0.7);
+
+    border-radius: 25px;
+
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+
+}
+
+
+.compteur {
+
+    margin-top: 40px;
+
+}
+
+
+#countdown {
+
+    font-size: 30px;
+    font-weight: bold;
+
+}
+
+
+.photos {
+
+    margin: 50px 20px;
+
+}
+
+
+input {
+
+    padding: 15px;
+
+}
+
+
+button {
+
+    margin-top: 20px;
+
+    background:#1F3A5F;
+
+    color:white;
+
+    border:none;
+
+    padding:15px 35px;
+
+    border-radius:30px;
+
+    font-size:18px;
+
+    cursor:pointer;
+
+    transition:0.3s;
+
+}
+
+
+button:hover {
+
+    background:#C78C9A;
+
+    transform:translateY(-3px);
+
+}
+
+
+.petale {
+    position: fixed;
+    top: -40px;
+    pointer-events: none;
+    animation-name: tomber;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    z-index: 999;
+}
+
+@keyframes tomber {
+
+    from {
+        transform: translateY(-40px) rotate(0deg);
+    }
+
+    to {
+        transform: translateY(110vh) rotate(360deg);
+    }
+
+}
+
+
+@keyframes apparition {
+
+    from {
+
+        opacity:0;
+        transform:translateY(30px);
+
+    }
+
+    to {
+
+        opacity:1;
+        transform:translateY(0);
+
+    }
+
+}
+
+
+footer {
+
+    margin-top:60px;
+
+    padding:20px;
+
+}
+/* Écran d'accueil */
+
+#splash {
+
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background: rgba(248,245,244,0.97);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    z-index: 9999;
+
+    transition: opacity 1s;
+
+}
+
+.logo {
+
+    text-align: center;
+
+    animation: apparitionLogo 2s ease;
+
+}
+
+.logo h1 {
+
+    color: #1F3A5F;
+
+    margin-bottom: 10px;
+
+    font-size: 55px;
+
+}
+
+.logo p {
+
+    color: #C78C9A;
+
+    font-size: 22px;
+
+    font-style: italic;
+
+}
+
+.alliances {
+
+    font-size: 70px;
+
+    margin-bottom: 20px;
+
+}
+
+@keyframes apparitionLogo {
+
+    from {
+
+        opacity: 0;
+
+        transform: scale(0.8);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: scale(1);
+
+    }
+
+}
+#entrer {
+
+    margin-top: 30px;
+
+    padding: 15px 35px;
+
+    border: none;
+
+    border-radius: 30px;
+
+    background: #1F3A5F;
+
+    color: white;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    transition: transform 0.3s, opacity 0.3s;
+
+}
+
+#entrer:hover {
+
+    transform: scale(1.05);
+
+}
