@@ -1,16 +1,70 @@
+require('dotenv').config();
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
 const express = require ('express');
 const multer = require ('multer');
+const mariages = require('./config/mariages.json');
 
 const app = express(); 
 
 app.use(express.static('public'));
 
-const upload = multer({ dest: 'uploads/' });
+
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+app.get('/api/mariage/:id/photos', async (req, res) => {
+
+  try {
+
+    const dossier = `album-d-un-oui/${req.params.id}`;
+
+    const result = await cloudinary.search
+      .expression(`folder:${dossier}`)
+      .sort_by('created_at', 'desc')
+      .execute();
+
+    console.log(JSON.stringify(result.resources, null, 2));
+
+    res.json(result.resources);
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).json({ erreur: err.message });
+
+  }
+
+});
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+
+    return {
+      folder: `album-d-un-oui/${req.body.mariage || "elodie-emilie"}`,
+      allowed_formats: ["jpg", "jpeg", "png", "webp"]
+    };
+
+  }
+});
+const upload = multer({ storage: storage });
+
 app.use((req, res, next) => {
     console.log(req.method, req.url);
     next();
 });
+console.log(mariages);
+
 app.post('/upload', upload.array('photos'), (req, res) => {
+
+  console.log("BODY COMPLET :", req.body);
+  console.log("MARIAGE REÇU :", req.body.mariage);
+
   res.send(`
   <!DOCTYPE html>
   <html lang="fr">
@@ -57,51 +111,61 @@ app.post('/upload', upload.array('photos'), (req, res) => {
   </html>
   `);
 });
-app.use('/uploads', express.static('uploads'));
+app.get('/photos', async (req, res) => {
 
-app.get('/photos', (req, res) => {
+  const result = await cloudinary.search
+    .expression('folder:album-d-un-oui')
+    .sort_by('created_at', 'desc')
+    .execute();
+    console.log(JSON.stringify(result.resources, null, 2));
 
-  const fs = require('fs');
+  let html = '<h1>Galerie photos</h1>';
 
-  fs.readdir('uploads', (err, files) => {
+  result.resources.forEach(photo => {
 
-    if (err) {
-
-      return res.send('Erreur de lecture des photos');
-
-    }
-
-    let html = '<h1>Galerie photos</h1>';
-
-    files.forEach(file => {
-
-      html += `<img src="/uploads/${file}" width="300" style="margin:10px;">`;
-
-    });
-
-    res.send(html);
+    html += `
+      <img src="${photo.secure_url}" width="300" style="margin:10px;">
+    `;
 
   });
 
-});
-app.get('/liste-photos', (req, res) => {
-
-  const fs = require('fs');
-
-  fs.readdir('uploads', (err, files) => {
-
-    if (err) {
-
-      return res.json([]);
-
-    }
-
-    res.json(files);
-
-  });
+  res.send(html);
 
 });
+app.get('/liste-photos', async (req, res) => {
+
+  const result = await cloudinary.search
+    .expression('folder:album-d-un-oui')
+    .execute();
+
+  res.json(result.resources);
+
+});
+
+
 console.log("version avec liste-photos chargée");
-  app.listen(3000, () => {
-  console.log('Serveur lancé sur le port 3000');
-  });
+
+app.get('/:mariage/galerie.html', (req, res) => {
+  res.sendFile(__dirname + '/public/galerie.html');
+});
+
+app.get('/api/mariage/:id', (req, res) => {
+  const mariage = mariages.find(m => m.id === req.params.id);
+
+  if (!mariage) {
+    return res.status(404).json({ erreur: "Mariage introuvable" });
+  }
+
+  res.json(mariage);
+});
+
+app.get('/:mariage', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Serveur lancé sur le port ${PORT}`);
+});
