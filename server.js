@@ -159,13 +159,17 @@ app.get('/api/mariage/:id', (req, res) => {
   res.json(mariage);
 });
 
+app.get('/admin', (req, res) => {
+  res.sendFile(__dirname + '/public/admin.html');
+});
+
+
 app.get('/:mariage', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
 
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur le port ${PORT}`);
 });

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Album d'un Oui - Administration</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>💍 Album d'un Oui</h1>
+    <p class="subtitle">Créer un nouveau mariage</p>
+
+    <form id="mariageForm">
+
+        <label>Prénoms des mariés</label>
+        <input type="text" placeholder="Élodie & Émilie">
+
+        <label>Identifiant</label>
+        <input type="text" placeholder="elodie-emilie">
+
+        <label>Date</label>
+        <input type="date">
+
+        <label>Heure</label>
+        <input type="time">
+
+        <label>Mairie</label>
+        <input type="text" placeholder="Mairie de Saint-Paul">
+
+        <label>Réception</label>
+        <input type="text" placeholder="Domaine de Vin's">
+
+        <label>Couleur principale</label>
+        <input type="color" value="#1F3A5F">
+
+        <label>Message d'accueil</label>
+        <textarea rows="5" placeholder="Bienvenue dans notre album..."></textarea>
+
+        <button type="submit">
+            Créer le mariage
+        </button>
+
+    </form>
+
+</div>
+
+<script src="admin.js"></script>
+
+</body>
+</html>
