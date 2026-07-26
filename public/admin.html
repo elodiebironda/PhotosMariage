@@ -1,54 +1,112 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Album d'un Oui - Administration</title>
+
+    <title>Administration - PhotosMariage</title>
 
     <link rel="stylesheet" href="admin.css">
 </head>
+
+
 <body>
 
-<div class="container">
+    <div class="admin-container">
 
-    <h1>💍 Album d'un Oui</h1>
-    <p class="subtitle">Créer un nouveau mariage</p>
+        <h1>💍 Créer un mariage</h1>
 
-    <form id="mariageForm">
+        <p>
+            Remplis les informations du mariage pour créer un nouvel album.
+        </p>
 
-        <label>Prénoms des mariés</label>
-        <input type="text" placeholder="Élodie & Émilie">
 
-        <label>Identifiant</label>
-        <input type="text" placeholder="elodie-emilie">
+        <form id="mariageForm">
 
-        <label>Date</label>
-        <input type="date">
 
-        <label>Heure</label>
-        <input type="time">
+            <label>Prénoms des mariés</label>
+            <input 
+                type="text" 
+                name="prenoms" 
+                placeholder="Sarah & Julien" 
+                required
+            >
 
-        <label>Mairie</label>
-        <input type="text" placeholder="Mairie de Saint-Paul">
 
-        <label>Réception</label>
-        <input type="text" placeholder="Domaine de Vin's">
+            <label>Identifiant du mariage</label>
+            <input 
+                type="text" 
+                name="id" 
+                placeholder="sarah-julien" 
+                required
+            >
 
-        <label>Couleur principale</label>
-        <input type="color" value="#1F3A5F">
 
-        <label>Message d'accueil</label>
-        <textarea rows="5" placeholder="Bienvenue dans notre album..."></textarea>
+            <label>Date du mariage</label>
+            <input 
+                type="date" 
+                name="date" 
+                required
+            >
 
-        <button type="submit">
-            Créer le mariage
-        </button>
 
-    </form>
+            <label>Heure de la cérémonie</label>
+            <input 
+                type="time" 
+                name="heure"
+            >
 
-</div>
 
-<script src="admin.js"></script>
+            <label>Mairie</label>
+            <input 
+                type="text" 
+                name="mairie" 
+                placeholder="Mairie de Saint-Paul"
+            >
+
+
+            <label>Lieu de réception</label>
+            <input 
+                type="text" 
+                name="lieu" 
+                placeholder="Domaine de Vin's"
+            >
+
+
+            <label>Couleur principale</label>
+            <input 
+                type="color" 
+                name="couleur" 
+                value="#1F3A5F"
+            >
+
+
+            <label>Message d'accueil</label>
+
+            <textarea 
+                name="message" 
+                rows="5"
+                placeholder="Bienvenue dans notre album..."
+            ></textarea>
+
+
+
+            <button type="submit">
+                Créer le mariage 💍
+            </button>
+
+
+        </form>
+
+
+    </div>
+
+
+
+    <script src="admin.js"></script>
+
 
 </body>
+
 </html>

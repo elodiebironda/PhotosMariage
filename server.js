@@ -5,9 +5,10 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const express = require ('express');
 const multer = require ('multer');
 const mariages = require('./config/mariages.json');
+const fs = require('fs');
 
 const app = express(); 
-
+app.use(express.json());
 app.use(express.static('public'));
 
 
@@ -159,6 +160,36 @@ app.get('/api/mariage/:id', (req, res) => {
   res.json(mariage);
 });
 
+app.post('/api/admin/mariage', (req, res) => {
+
+  const nouveauMariage = {
+    id: req.body.id,
+    prenoms: req.body.prenoms,
+    date: req.body.date,
+    heure: req.body.heure,
+    mairie: req.body.mairie,
+    lieu: req.body.lieu,
+    couleur: req.body.couleur,
+    message: req.body.message
+  };
+
+
+  mariages.push(nouveauMariage);
+
+
+  fs.writeFileSync(
+    './config/mariages.json',
+    JSON.stringify(mariages, null, 2)
+  );
+
+
+  res.json({
+    message: "Mariage créé avec succès 💍",
+    lien: `/${nouveauMariage.id}`,
+    mariage: nouveauMariage
+  });
+
+});
 app.get('/admin', (req, res) => {
   res.sendFile(__dirname + '/public/admin.html');
 });
