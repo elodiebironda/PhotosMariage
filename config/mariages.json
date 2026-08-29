@@ -5,7 +5,8 @@
     "date": "04 juin 2027",
     "lieu": "Domaine de Vin's - Saint-Leu",
     "mairie": "Mairie de Saint-Paul",
-    "couleur": "bleu"
+    "couleur": "bleu",
+    "codeInvite": "OUI2027"
   },
   {
     "prenoms": "Flora & Cedric",
@@ -16,5 +17,27 @@
     "lieu": "Domaine Mon Caprice",
     "couleur": "#f9d3e0",
     "message": "Merci à vous"
+  },
+  {
+    "id": "Sarah & Jule",
+    "prenoms": "Sarah & Jule",
+    "date": "2026-09-02",
+    "heure": "13:30",
+    "mairie": "Mairie de Saint Pierre",
+    "lieu": "Domaine Mon Caprice",
+    "couleur": "#b51a00",
+    "message": "Bienvenu dans notre album",
+    "codeInvite": "SARAH27"
+  },
+  {
+    "id": "emilie-elodie",
+    "prenoms": "Élodie & Émilie",
+    "date": "2026-09-02",
+    "heure": "13:00",
+    "mairie": "Saint-Pierre",
+    "lieu": "Domaine Mont Caprice",
+    "couleur": "#94e3fe",
+    "message": "Bienvenue dans notre univers",
+    "codeInvite": "8D5D754E"
   }
 ]

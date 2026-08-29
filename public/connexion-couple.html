@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Connexion 💍</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-family: Arial, sans-serif;
+
+            background: #F8F5F4;
+            color: #1F3A5F;
+        }
+
+
+        .connexion {
+            width: 90%;
+            max-width: 400px;
+
+            background: white;
+
+            padding: 40px 25px;
+
+            border-radius: 25px;
+
+            text-align: center;
+
+            box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        }
+
+
+        h1 {
+            color: #C78C9A;
+        }
+
+
+        label {
+            display: block;
+
+            text-align: left;
+
+            margin-top: 20px;
+
+            font-weight: bold;
+        }
+
+
+        input {
+            width: 100%;
+
+            box-sizing: border-box;
+
+            padding: 15px;
+
+            margin-top: 8px;
+
+            border: 1px solid #ddd;
+
+            border-radius: 12px;
+
+            font-size: 16px;
+        }
+
+
+        button {
+            width: 100%;
+
+            margin-top: 25px;
+
+            padding: 15px;
+
+            border: none;
+
+            border-radius: 30px;
+
+            background: #1F3A5F;
+
+            color: white;
+
+            font-size: 16px;
+
+            cursor: pointer;
+        }
+
+
+        a {
+            display: inline-block;
+
+            margin-top: 20px;
+
+            color: #1F3A5F;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="connexion">
+
+        <h1>💍 Mon espace</h1>
+
+        <p>
+            Connectez-vous pour gérer
+            votre mariage.
+        </p>
+
+
+        <form
+            action="/connexion-couple"
+            method="POST"
+        >
+
+            <label>
+                Adresse e-mail
+            </label>
+
+            <input
+                type="email"
+                name="email"
+                placeholder="votre@email.com"
+                required
+            >
+
+
+            <label>
+                Mot de passe
+            </label>
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Votre mot de passe"
+                required
+            >
+
+
+            <button type="submit">
+                Se connecter ❤️
+            </button>
+
+        </form>
+
+
+        <a href="/inscription">
+            Créer mon compte 💍
+        </a>
+
+    </div>
+
+</body>
+
+</html>

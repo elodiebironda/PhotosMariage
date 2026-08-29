@@ -2,51 +2,98 @@
 <html lang="fr">
 
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
 
 <title>Galerie - Élodie & Émilie</title>
 
+
 <style>
 
+/* ========================================
+   PAGE
+======================================== */
+
 body {
+
   margin: 0;
+
   font-family: Arial, sans-serif;
+
   background: #F8F5F4;
+
   color: #1F3A5F;
+
   text-align: center;
+
 }
+
+
+/* ========================================
+   HEADER
+======================================== */
 
 header {
+
   padding: 40px 20px;
+
 }
+
 
 h1 {
+
   color: #C78C9A;
+
   font-size: 40px;
+
 }
 
+
 p {
+
   font-size: 18px;
+
 }
+
+
+/* ========================================
+   GALERIE
+======================================== */
 
 .galerie {
 
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(250px, 1fr)
+    );
+
   gap: 20px;
+
   padding: 30px;
 
 }
 
+
 .galerie img {
 
   width: 100%;
+
   border-radius: 20px;
+
   cursor: pointer;
+
   transition: 0.4s;
 
 }
+
 
 .galerie img:hover {
 
@@ -55,27 +102,56 @@ p {
 }
 
 
-/* fenêtre image en grand */
+/* ========================================
+   MESSAGE
+======================================== */
 
-#zoom {
+.message {
 
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.8);
-align-items:center;
-justify-content:center;
+  padding: 40px 20px;
+
+  font-size: 18px;
 
 }
 
+
+/* ========================================
+   FENÊTRE IMAGE EN GRAND
+======================================== */
+
+#zoom {
+
+  display: none;
+
+  position: fixed;
+
+  top: 0;
+
+  left: 0;
+
+  width: 100%;
+
+  height: 100%;
+
+  background:
+    rgba(0, 0, 0, 0.8);
+
+  align-items: center;
+
+  justify-content: center;
+
+  z-index: 9999;
+
+}
+
+
 #zoom img {
 
-max-width:90%;
-max-height:90%;
-border-radius:20px;
+  max-width: 90%;
+
+  max-height: 90%;
+
+  border-radius: 20px;
 
 }
 
@@ -86,66 +162,314 @@ border-radius:20px;
 
 <body>
 
+
+<!-- ========================================
+     EN-TÊTE
+======================================== -->
+
 <header>
 
-<h1>💍 Élodie & Émilie</h1>
+  <h1 id="titreGalerie">
+    💍 Élodie & Émilie
+  </h1>
 
-<p>
-Nos plus beaux souvenirs ❤️
-</p>
+  <p>
+    Nos plus beaux souvenirs ❤️
+  </p>
 
 </header>
 
 
-<div class="galerie" id="photos"></div>
+<!-- ========================================
+     GALERIE
+======================================== -->
+
+<div
+  class="galerie"
+  id="photos"
+>
+
+  <p class="message">
+    Chargement des photos... 📸
+  </p>
+
+</div>
 
 
-<div id="zoom" onclick="fermer()">
-<img id="imageZoom">
+<!-- ========================================
+     ZOOM
+======================================== -->
+
+<div
+  id="zoom"
+  onclick="fermer()"
+>
+
+  <img
+    id="imageZoom"
+    src=""
+    alt="Photo du mariage"
+  >
+
 </div>
 
 
 <script>
 
-const idMariage = "elodie-emilie";
 
-fetch(`/api/mariage/${idMariage}/photos`)
+// ========================================
+// IDENTIFICATION DU MARIAGE
+// ========================================
 
-.then(response => response.json())
+// Exemple d'URL :
+// /elodie-emilie/galerie.html
 
-.then(photos => {
+const chemin =
+  window.location.pathname;
 
-    const galerie = document.getElementById('photos');
+const morceaux =
+  chemin.split('/');
 
-    photos.forEach(photo => {
+const idMariage =
+  morceaux[1];
 
-        galerie.innerHTML += `
 
-        <img
-        src="${photo.secure_url}"
-        onclick="ouvrir('${photo.secure_url}')">
+console.log(
+  "ID DU MARIAGE :",
+  idMariage
+);
 
-        `;
 
-    });
+// ========================================
+// CHARGEMENT DES INFORMATIONS
+// ========================================
+
+fetch(
+  `/api/mariage/${idMariage}`
+)
+
+.then(response => {
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Mariage introuvable"
+    );
+
+  }
+
+  return response.json();
+
+})
+
+.then(mariage => {
+
+  console.log(
+    "Mariage chargé :",
+    mariage
+  );
+
+
+  // Modification du titre
+
+  const titre =
+    document.getElementById(
+      "titreGalerie"
+    );
+
+
+  if (titre) {
+
+    titre.textContent =
+      `💍 ${mariage.prenoms}`;
+
+  }
+
+
+})
+
+.catch(error => {
+
+  console.error(
+    "Erreur mariage :",
+    error
+  );
 
 });
 
 
-function ouvrir(image){
+// ========================================
+// CHARGEMENT DES PHOTOS
+// ========================================
 
-    document.getElementById("imageZoom").src = image;
-    document.getElementById("zoom").style.display = "flex";
+fetch(
+  `/api/mariage/${idMariage}/photos`
+)
+
+.then(response => {
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Impossible de charger les photos"
+    );
+
+  }
+
+  return response.json();
+
+})
+
+.then(photos => {
+
+  console.log(
+    "Photos reçues :",
+    photos
+  );
+
+
+  const galerie =
+    document.getElementById(
+      "photos"
+    );
+
+
+  // On vide le message
+  // "Chargement..."
+
+  galerie.innerHTML = "";
+
+
+  // ======================================
+  // AUCUNE PHOTO
+  // ======================================
+
+  if (
+    !photos ||
+    photos.length === 0
+  ) {
+
+    galerie.innerHTML = `
+
+      <p class="message">
+
+        Aucune photo n'a encore été envoyée ❤️
+
+      </p>
+
+    `;
+
+    return;
+
+  }
+
+
+  // ======================================
+  // AFFICHAGE DES PHOTOS
+  // ======================================
+
+  photos.forEach(photo => {
+
+
+    const image =
+      document.createElement("img");
+
+
+    image.src =
+      photo.secure_url;
+
+
+    image.alt =
+      "Souvenir du mariage ❤️";
+
+
+    image.loading =
+      "lazy";
+
+
+    image.onclick =
+      () => {
+
+        ouvrir(
+          photo.secure_url
+        );
+
+      };
+
+
+    galerie.appendChild(
+      image
+    );
+
+
+  });
+
+})
+
+.catch(error => {
+
+  console.error(
+    "Erreur galerie :",
+    error
+  );
+
+
+  document.getElementById(
+    "photos"
+  ).innerHTML = `
+
+    <p class="message">
+
+      Impossible de charger les photos 😕<br>
+      Veuillez réessayer plus tard.
+
+    </p>
+
+  `;
+
+});
+
+
+// ========================================
+// OUVRIR UNE PHOTO
+// ========================================
+
+function ouvrir(image) {
+
+  const zoom =
+    document.getElementById(
+      "zoom"
+    );
+
+
+  const imageZoom =
+    document.getElementById(
+      "imageZoom"
+    );
+
+
+  imageZoom.src =
+    image;
+
+
+  zoom.style.display =
+    "flex";
 
 }
 
 
-function fermer(){
+// ========================================
+// FERMER LE ZOOM
+// ========================================
 
-    document.getElementById("zoom").style.display = "none";
+function fermer() {
+
+  document.getElementById(
+    "zoom"
+  ).style.display =
+    "none";
 
 }
-
 
 </script>
 

@@ -1,8 +1,12 @@
+:root { 
+    --couleur-principale: #1F3A5F;
+    --couleur-accent: #C78C9A;
+}
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     text-align: center;
-    color: #1F3A5F;
+    color: #444;
 
     background-image:
     linear-gradient(
@@ -25,7 +29,7 @@ header {
 .initiales {
 
     font-size: 90px;
-    color: #C78C9A;
+    color: var(--couleur-principale);
     font-family: "Times New Roman", serif;
 
     animation: apparition 2s ease;
@@ -37,15 +41,14 @@ h1 {
 
     font-size: 50px;
     margin-bottom: 10px;
+    color: #1F3A5F;
 
 }
 
 
 h2 {
-
     color: #C78C9A;
     font-weight: normal;
-
 }
 
 
@@ -105,7 +108,7 @@ button {
 
     margin-top: 20px;
 
-    background:#1F3A5F;
+    background: var(--couleur-principale);
 
     color:white;
 
@@ -220,7 +223,7 @@ footer {
 
 .logo h1 {
 
-    color: #1F3A5F;
+    color: var(--couleur-principale);
 
     margin-bottom: 10px;
 
@@ -230,7 +233,7 @@ footer {
 
 .logo p {
 
-    color: #C78C9A;
+    color: var(--couleur-principale);
 
     font-size: 22px;
 
@@ -275,7 +278,7 @@ footer {
 
     border-radius: 30px;
 
-    background: #1F3A5F;
+    background: var(--couleur-principale);
 
     color: white;
 

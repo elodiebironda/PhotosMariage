@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Connexion invité 💍</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      font-family: Arial, sans-serif;
+
+      background: #F8F5F4;
+      color: #1F3A5F;
+    }
+
+    .connexion {
+      width: 90%;
+      max-width: 400px;
+
+      background: white;
+
+      padding: 40px 25px;
+
+      border-radius: 25px;
+
+      text-align: center;
+
+      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      color: #C78C9A;
+      margin-bottom: 10px;
+    }
+
+    p {
+      line-height: 1.6;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+
+      padding: 15px;
+
+      margin-top: 20px;
+
+      border: 1px solid #ddd;
+      border-radius: 12px;
+
+      font-size: 16px;
+
+      text-align: center;
+    }
+
+    button {
+      width: 100%;
+
+      margin-top: 20px;
+
+      padding: 15px;
+
+      border: none;
+      border-radius: 30px;
+
+      background: #1F3A5F;
+      color: white;
+
+      font-size: 16px;
+
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .erreur {
+      color: #C78C9A;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="connexion">
+
+    <h1>Bienvenue 💍</h1>
+
+    <p>
+      Entrez le code qui vous a été transmis
+      pour accéder au mariage.
+    </p>
+
+    <form action="/connexion" method="POST">
+
+      <input
+        type="text"
+        name="codeInvite"
+        placeholder="Code du mariage"
+        required
+      >
+
+      <button type="submit">
+        Entrer dans le mariage ❤️
+      </button>
+
+    </form>
+
+  </div>
+
+</body>
+
+</html>

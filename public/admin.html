@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="admin.css">
 </head>
 
-
 <body>
 
     <div class="admin-container">
@@ -21,91 +20,141 @@
             Remplis les informations du mariage pour créer un nouvel album.
         </p>
 
-
         <form id="mariageForm">
 
-
             <label>Prénoms des mariés</label>
-            <input 
-                type="text" 
-                name="prenoms" 
-                placeholder="Sarah & Julien" 
+
+            <input
+                type="text"
+                name="prenoms"
+                placeholder="Sarah & Julien"
                 required
             >
 
 
             <label>Identifiant du mariage</label>
-            <input 
-                type="text" 
-                name="id" 
-                placeholder="sarah-julien" 
+
+            <input
+                type="text"
+                name="id"
+                placeholder="sarah-julien"
                 required
             >
 
 
+            <label>Code invité 🔐</label>
+
+            <input
+                type="text"
+                name="codeInvite"
+                placeholder="OUI2027"
+                required
+            >
+
+            <small>
+                Ce code sera transmis aux invités pour accéder au mariage.
+            </small>
+
+
             <label>Date du mariage</label>
-            <input 
-                type="date" 
-                name="date" 
+
+            <input
+                type="date"
+                name="date"
                 required
             >
 
 
             <label>Heure de la cérémonie</label>
-            <input 
-                type="time" 
+
+            <input
+                type="time"
                 name="heure"
             >
 
 
             <label>Mairie</label>
-            <input 
-                type="text" 
-                name="mairie" 
+
+            <input
+                type="text"
+                name="mairie"
                 placeholder="Mairie de Saint-Paul"
             >
 
 
             <label>Lieu de réception</label>
-            <input 
-                type="text" 
-                name="lieu" 
+
+            <input
+                type="text"
+                name="lieu"
                 placeholder="Domaine de Vin's"
             >
 
 
             <label>Couleur principale</label>
-            <input 
-                type="color" 
-                name="couleur" 
+
+            <input
+                type="color"
+                name="couleur"
                 value="#1F3A5F"
             >
 
 
             <label>Message d'accueil</label>
 
-            <textarea 
-                name="message" 
+            <textarea
+                name="message"
                 rows="5"
                 placeholder="Bienvenue dans notre album..."
             ></textarea>
-
 
 
             <button type="submit">
                 Créer le mariage 💍
             </button>
 
-
         </form>
 
+
+        <!-- Résultat de la création -->
+
+        <div id="resultat" style="display:none;">
+
+            <h2>🎉 Mariage créé !</h2>
+
+            <p id="messageResultat"></p>
+
+            <p>
+                <strong>Lien du mariage :</strong>
+            </p>
+
+            <a
+                id="lienMariage"
+                href="#"
+                target="_blank"
+            >
+                Ouvrir le mariage 💍
+            </a>
+
+            <p>
+                <strong>Code invité :</strong>
+            </p>
+
+            <p id="codeResultat"></p>
+
+        </div>
+
+
+        <br>
+
+        <a href="/logout">
+            Déconnexion
+        </a>
 
     </div>
 
 
-
     <script src="admin.js"></script>
-
 
 </body>
 
