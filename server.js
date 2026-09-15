@@ -1,18 +1,28 @@
 require('dotenv').config();
 
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
 const express = require('express');
 const multer = require('multer');
-const mariages = require('./config/mariages.json');
-const comptes = require('./config/comptes.json');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+const mariages = require('./config/mariages.json');
+const comptes = require('./config/comptes.json');
 
 const app = express();
+
+
+// ========================================
+// CONFIGURATION
+// ========================================
+
+const PORT = process.env.PORT || 3000;
+
+app.set('trust proxy', 1);
 
 
 // ========================================
@@ -20,20 +30,42 @@ const app = express();
 // ========================================
 
 app.use(session({
-  secret: "photosMariage-secret",
+  secret: process.env.SESSION_SECRET || 'photosMariage-secret',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax'
+  }
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+// ========================================
+// LOG DES REQUÊTES
+// ========================================
 
 app.use((req, res, next) => {
   console.log(req.method, req.url);
   next();
 });
 
-app.use(express.static('public', { index: false }));
+
+// ========================================
+// FICHIERS PUBLICS
+// ========================================
+
+app.use(
+  express.static(
+    path.join(__dirname, 'public'),
+    {
+      index: false
+    }
+  )
+);
 
 
 // ========================================
@@ -61,17 +93,35 @@ function verifierInvite(req, res, next) {
     req.session.invite &&
     req.session.mariage === mariageId
   ) {
-    next();
-  } else {
-
-    if (req.path.startsWith('/api/')) {
-      return res.status(401).json({
-        erreur: "Connexion invité nécessaire"
-      });
-    }
-
-    res.redirect('/connexion');
+    return next();
   }
+
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({
+      erreur: 'Connexion invité nécessaire'
+    });
+  }
+
+  return res.redirect('/connexion');
+}
+
+
+// ========================================
+// MIDDLEWARE INVITÉ POUR UPLOAD
+// ========================================
+
+function verifierInviteUpload(req, res, next) {
+
+  if (
+    req.session.invite &&
+    req.session.mariage
+  ) {
+    return next();
+  }
+
+  return res.status(401).send(
+    'Connexion invité nécessaire.'
+  );
 }
 
 
@@ -82,11 +132,10 @@ function verifierInvite(req, res, next) {
 function verifierAdmin(req, res, next) {
 
   if (req.session.admin) {
-    next();
-  } else {
-    res.redirect('/login');
+    return next();
   }
 
+  return res.redirect('/login');
 }
 
 
@@ -96,13 +145,147 @@ function verifierAdmin(req, res, next) {
 
 function verifierCouple(req, res, next) {
 
-  if (req.session.couple && req.session.compteId) {
-    next();
-  } else {
-    res.redirect('/connexion-couple');
+  if (
+    req.session.couple &&
+    req.session.compteId
+  ) {
+    return next();
   }
 
+  return res.redirect('/connexion-couple');
 }
+
+
+// ========================================
+// PAGE D'ACCUEIL
+// ========================================
+
+app.get('/', (req, res) => {
+
+  res.redirect('/connexion');
+
+});
+
+
+// ========================================
+// CONNEXION INVITÉ
+// ========================================
+
+app.get('/connexion', (req, res) => {
+
+  res.sendFile(
+    path.join(__dirname, 'public', 'connexion.html')
+  );
+
+});
+
+
+app.post('/connexion', (req, res) => {
+
+  const codeInvite =
+    (req.body.codeInvite || '')
+      .trim()
+      .toUpperCase();
+
+
+  console.log(
+    'CODE INVITÉ :',
+    codeInvite
+  );
+
+
+  const mariage = mariages.find(
+    m =>
+      (m.codeInvite || '')
+        .trim()
+        .toUpperCase() === codeInvite
+  );
+
+
+  if (!mariage) {
+
+    return res.send(`
+      <!DOCTYPE html>
+
+      <html lang="fr">
+
+      <head>
+
+        <meta charset="UTF-8">
+
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0">
+
+        <title>Code incorrect</title>
+
+      </head>
+
+      <body style="
+        font-family:Arial;
+        text-align:center;
+        padding:50px;
+        background:#F8F5F4;
+      ">
+
+        <h1>Code incorrect ❌</h1>
+
+        <p>
+          Le code que vous avez indiqué
+          n'est pas valide.
+        </p>
+
+        <a href="/connexion">
+          Réessayer
+        </a>
+
+      </body>
+
+      </html>
+    `);
+
+  }
+
+
+  // Connexion à CE mariage uniquement
+
+  req.session.invite = true;
+  req.session.mariage = mariage.id;
+
+
+  return res.redirect(
+    `/${mariage.id}`
+  );
+
+});
+
+
+// ========================================
+// INFORMATIONS D'UN MARIAGE
+// ========================================
+
+app.get(
+  '/api/mariage/:id',
+  verifierInvite,
+  (req, res) => {
+
+    const mariage = mariages.find(
+      m => m.id === req.params.id
+    );
+
+
+    if (!mariage) {
+
+      return res.status(404).json({
+        erreur: 'Mariage introuvable'
+      });
+
+    }
+
+
+    return res.json(mariage);
+
+  }
+);
 
 
 // ========================================
@@ -116,21 +299,45 @@ app.get(
 
     try {
 
+      const mariage = mariages.find(
+        m => m.id === req.params.id
+      );
+
+
+      if (!mariage) {
+
+        return res.status(404).json({
+          erreur: 'Mariage introuvable'
+        });
+
+      }
+
+
       const dossier =
-        `album-d-un-oui/${req.params.id}`;
+        `album-d-un-oui/${mariage.id}`;
 
-      const result = await cloudinary.search
-        .expression(`folder:${dossier}`)
-        .sort_by('created_at', 'desc')
-        .execute();
 
-      res.json(result.resources);
+      const result =
+        await cloudinary.search
+          .expression(
+            `folder:${dossier}`
+          )
+          .sort_by(
+            'created_at',
+            'desc'
+          )
+          .execute();
+
+
+      return res.json(
+        result.resources
+      );
 
     } catch (err) {
 
       console.error(err);
 
-      res.status(500).json({
+      return res.status(500).json({
         erreur: err.message
       });
 
@@ -141,36 +348,52 @@ app.get(
 
 
 // ========================================
-// UPLOAD CLOUDINARY
+// STOCKAGE CLOUDINARY
 // ========================================
 
-const storage = new CloudinaryStorage({
+const storage =
+  new CloudinaryStorage({
 
-  cloudinary: cloudinary,
+    cloudinary: cloudinary,
 
-  params: async (req, file) => {
+    params: async (req, file) => {
 
-    return {
+      /*
+       * IMPORTANT :
+       * Le dossier est maintenant déterminé
+       * par la session du mariage connecté.
+       *
+       * On ne fait plus confiance à
+       * req.body.mariage.
+       */
 
-      folder:
-        `album-d-un-oui/${req.body.mariage || "elodie-emilie"}`,
+      const mariageId =
+        req.session.mariage;
 
-      allowed_formats: [
-        "jpg",
-        "jpeg",
-        "png",
-        "webp"
-      ]
 
-    };
+      return {
 
-  }
+        folder:
+          `album-d-un-oui/${mariageId}`,
 
-});
+        allowed_formats: [
+          'jpg',
+          'jpeg',
+          'png',
+          'webp'
+        ]
 
-const upload = multer({
-  storage: storage
-});
+      };
+
+    }
+
+  });
+
+
+const upload =
+  multer({
+    storage: storage
+  });
 
 
 // ========================================
@@ -179,23 +402,40 @@ const upload = multer({
 
 app.post(
   '/upload',
+  verifierInviteUpload,
   upload.array('photos'),
   (req, res) => {
 
-    const mariageId = req.body.mariage;
+    const mariageId =
+      req.session.mariage;
 
-    if (
-      !req.session.invite ||
-      req.session.mariage !== mariageId
-    ) {
+
+    if (!mariageId) {
 
       return res.status(401).send(
-        "Connexion invité nécessaire."
+        'Connexion invité nécessaire.'
       );
 
     }
 
-    res.send(`
+
+    const mariage =
+      mariages.find(
+        m => m.id === mariageId
+      );
+
+
+    if (!mariage) {
+
+      return res.status(404).send(
+        'Mariage introuvable.'
+      );
+
+    }
+
+
+    return res.send(`
+
       <!DOCTYPE html>
 
       <html lang="fr">
@@ -204,8 +444,10 @@ app.post(
 
         <meta charset="UTF-8">
 
-        <meta name="viewport"
-              content="width=device-width, initial-scale=1.0">
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0"
+        >
 
         <title>Merci ❤️</title>
 
@@ -248,13 +490,14 @@ app.post(
           de notre journée.
         </p>
 
-        <a href="/${mariageId}">
+        <a href="/${mariage.id}">
           Retour au mariage
         </a>
 
       </body>
 
       </html>
+
     `);
 
   }
@@ -265,167 +508,96 @@ app.post(
 // GALERIE GÉNÉRALE
 // ========================================
 
-app.get('/photos', async (req, res) => {
+app.get(
+  '/photos',
+  verifierAdmin,
+  async (req, res) => {
 
-  try {
+    try {
 
-    const result = await cloudinary.search
-      .expression('folder:album-d-un-oui')
-      .sort_by('created_at', 'desc')
-      .execute();
+      const result =
+        await cloudinary.search
+          .expression(
+            'folder:album-d-un-oui'
+          )
+          .sort_by(
+            'created_at',
+            'desc'
+          )
+          .execute();
 
-    let html = '<h1>Galerie photos</h1>';
 
-    result.resources.forEach(photo => {
+      let html =
+        '<h1>Galerie photos</h1>';
 
-      html += `
-        <img
-          src="${photo.secure_url}"
-          width="300"
-          style="margin:10px;"
-        >
-      `;
 
-    });
+      result.resources.forEach(
+        photo => {
 
-    res.send(html);
+          html += `
+            <img
+              src="${photo.secure_url}"
+              width="300"
+              style="margin:10px;"
+            >
+          `;
 
-  } catch (err) {
+        }
+      );
 
-    console.error(err);
 
-    res.status(500).send(
-      "Erreur lors du chargement des photos."
-    );
+      return res.send(html);
+
+    } catch (err) {
+
+      console.error(err);
+
+      return res.status(500).send(
+        'Erreur lors du chargement des photos.'
+      );
+
+    }
 
   }
-
-});
+);
 
 
 // ========================================
 // LISTE DES PHOTOS
 // ========================================
 
-app.get('/liste-photos', async (req, res) => {
-
-  try {
-
-    const result = await cloudinary.search
-      .expression('folder:album-d-un-oui')
-      .execute();
-
-    res.json(result.resources);
-
-  } catch (err) {
-
-    console.error(err);
-
-    res.status(500).json({
-      erreur: err.message
-    });
-
-  }
-
-});
-
-
-// ========================================
-// CONNEXION INVITÉ
-// ========================================
-
-app.get('/connexion', (req, res) => {
-
-  res.sendFile(
-    __dirname + '/public/connexion.html'
-  );
-
-});
-
-
-app.post('/connexion', (req, res) => {
-
-  const codeInvite =
-    (req.body.codeInvite || '')
-      .trim()
-      .toUpperCase();
-
-  console.log("CODE INVITÉ :", codeInvite);
-
-  const mariage = mariages.find(
-    m =>
-      (m.codeInvite || '')
-        .trim()
-        .toUpperCase() === codeInvite
-  );
-
-  if (!mariage) {
-
-    return res.send(`
-      <!DOCTYPE html>
-
-      <html lang="fr">
-
-      <head>
-        <meta charset="UTF-8">
-        <title>Code incorrect</title>
-      </head>
-
-      <body style="
-        font-family: Arial;
-        text-align: center;
-        padding: 50px;
-        background: #F8F5F4;
-      ">
-
-        <h1>Code incorrect ❌</h1>
-
-        <p>
-          Le code que vous avez indiqué
-          n'est pas valide.
-        </p>
-
-        <a href="/connexion">
-          Réessayer
-        </a>
-
-      </body>
-
-      </html>
-    `);
-
-  }
-
-  req.session.invite = true;
-  req.session.mariage = mariage.id;
-
-  res.redirect(`/${mariage.id}`);
-
-});
-
-
-// ========================================
-// INFORMATIONS D'UN MARIAGE
-// ========================================
-
 app.get(
-  '/api/mariage/:id',
-  verifierInvite,
-  (req, res) => {
+  '/liste-photos',
+  verifierAdmin,
+  async (req, res) => {
 
-    const mariage = mariages.find(
-      m => m.id === req.params.id
-    );
+    try {
 
-    if (!mariage) {
+      const result =
+        await cloudinary.search
+          .expression(
+            'folder:album-d-un-oui'
+          )
+          .sort_by(
+            'created_at',
+            'desc'
+          )
+          .execute();
 
-      return res.status(404).json({
-        erreur: "Mariage introuvable"
+
+      return res.json(
+        result.resources
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      return res.status(500).json({
+        erreur: err.message
       });
 
     }
-
-    res.json(mariage);
 
   }
 );
@@ -440,8 +612,27 @@ app.get(
   verifierInvite,
   (req, res) => {
 
-    res.sendFile(
-      __dirname + '/public/galerie.html'
+    const mariage =
+      mariages.find(
+        m => m.id === req.params.mariage
+      );
+
+
+    if (!mariage) {
+
+      return res.status(404).send(
+        'Mariage introuvable.'
+      );
+
+    }
+
+
+    return res.sendFile(
+      path.join(
+        __dirname,
+        'public',
+        'galerie.html'
+      )
     );
 
   }
@@ -452,231 +643,311 @@ app.get(
 // INSCRIPTION COUPLE
 // ========================================
 
-app.get('/inscription', (req, res) => {
+app.get(
+  '/inscription',
+  (req, res) => {
 
-  res.sendFile(
-    __dirname + '/public/inscription.html'
-  );
+    res.sendFile(
+      path.join(
+        __dirname,
+        'public',
+        'inscription.html'
+      )
+    );
 
-});
-
-
-app.post('/inscription', async (req, res) => {
-
-  const nom =
-    (req.body.nom || '').trim();
-
-  const email =
-    (req.body.email || '').trim().toLowerCase();
-
-  const password =
-    req.body.password || '';
-
-  const confirmation =
-    req.body.confirmation || '';
+  }
+);
 
 
-  if (
-    !nom ||
-    !email ||
-    !password ||
-    !confirmation
-  ) {
+app.post(
+  '/inscription',
+  async (req, res) => {
+
+    const nom =
+      (req.body.nom || '')
+        .trim();
+
+
+    const email =
+      (req.body.email || '')
+        .trim()
+        .toLowerCase();
+
+
+    const password =
+      req.body.password || '';
+
+
+    const confirmation =
+      req.body.confirmation || '';
+
+
+    if (
+      !nom ||
+      !email ||
+      !password ||
+      !confirmation
+    ) {
+
+      return res.send(`
+        <h1>Informations manquantes ❌</h1>
+
+        <a href="/inscription">
+          Réessayer
+        </a>
+      `);
+
+    }
+
+
+    if (password !== confirmation) {
+
+      return res.send(`
+        <h1>
+          Les mots de passe ne correspondent pas ❌
+        </h1>
+
+        <a href="/inscription">
+          Réessayer
+        </a>
+      `);
+
+    }
+
+
+    if (password.length < 8) {
+
+      return res.send(`
+        <h1>
+          Mot de passe trop court ❌
+        </h1>
+
+        <p>
+          Le mot de passe doit contenir
+          au moins 8 caractères.
+        </p>
+
+        <a href="/inscription">
+          Réessayer
+        </a>
+      `);
+
+    }
+
+
+    const emailExiste =
+      comptes.find(
+        compte =>
+          compte.email.toLowerCase() === email
+      );
+
+
+    if (emailExiste) {
+
+      return res.send(`
+        <h1>
+          Cette adresse existe déjà ❌
+        </h1>
+
+        <a href="/connexion-couple">
+          Se connecter
+        </a>
+      `);
+
+    }
+
+
+    const motDePasseHash =
+      await bcrypt.hash(
+        password,
+        10
+      );
+
+
+    const nouveauCompte = {
+
+      id:
+        Date.now().toString(),
+
+      nom:
+        nom,
+
+      email:
+        email,
+
+      password:
+        motDePasseHash,
+
+      mariageId:
+        null
+
+    };
+
+
+    comptes.push(
+      nouveauCompte
+    );
+
+
+    fs.writeFileSync(
+      path.join(
+        __dirname,
+        'config',
+        'comptes.json'
+      ),
+      JSON.stringify(
+        comptes,
+        null,
+        2
+      )
+    );
+
 
     return res.send(`
-      <h1>Informations manquantes ❌</h1>
-      <a href="/inscription">Réessayer</a>
+
+      <!DOCTYPE html>
+
+      <html lang="fr">
+
+      <head>
+
+        <meta charset="UTF-8">
+
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0"
+        >
+
+        <title>Compte créé</title>
+
+      </head>
+
+      <body style="
+        font-family:Arial;
+        text-align:center;
+        padding:60px 20px;
+        background:#F8F5F4;
+        color:#1F3A5F;
+      ">
+
+        <h1 style="color:#C78C9A;">
+          Compte créé ❤️
+        </h1>
+
+        <p>
+          Votre compte a bien été créé.
+        </p>
+
+        <a href="/connexion-couple">
+          Se connecter 🔐
+        </a>
+
+      </body>
+
+      </html>
+
     `);
 
   }
-
-
-  if (password !== confirmation) {
-
-    return res.send(`
-      <h1>Les mots de passe ne correspondent pas ❌</h1>
-      <a href="/inscription">Réessayer</a>
-    `);
-
-  }
-
-
-  if (password.length < 8) {
-
-    return res.send(`
-      <h1>Mot de passe trop court ❌</h1>
-      <p>
-        Le mot de passe doit contenir au moins 8 caractères.
-      </p>
-      <a href="/inscription">Réessayer</a>
-    `);
-
-  }
-
-
-  const emailExiste = comptes.find(
-    compte =>
-      compte.email.toLowerCase() === email
-  );
-
-
-  if (emailExiste) {
-
-    return res.send(`
-      <h1>Cette adresse existe déjà ❌</h1>
-      <a href="/connexion-couple">
-        Se connecter
-      </a>
-    `);
-
-  }
-
-
-  const motDePasseHash =
-    await bcrypt.hash(password, 10);
-
-
-  const nouveauCompte = {
-
-    id: Date.now().toString(),
-
-    nom: nom,
-
-    email: email,
-
-    password: motDePasseHash,
-
-    mariageId: null
-
-  };
-
-
-  comptes.push(nouveauCompte);
-
-
-  fs.writeFileSync(
-    './config/comptes.json',
-    JSON.stringify(comptes, null, 2)
-  );
-
-
-  res.send(`
-    <!DOCTYPE html>
-
-    <html lang="fr">
-
-    <head>
-
-      <meta charset="UTF-8">
-
-      <title>Compte créé</title>
-
-    </head>
-
-    <body style="
-      font-family: Arial;
-      text-align: center;
-      padding: 60px 20px;
-      background: #F8F5F4;
-      color: #1F3A5F;
-    ">
-
-      <h1 style="color:#C78C9A;">
-        Compte créé ❤️
-      </h1>
-
-      <p>
-        Votre compte a bien été créé.
-      </p>
-
-      <a href="/connexion-couple">
-        Se connecter 🔐
-      </a>
-
-    </body>
-
-    </html>
-  `);
-
-});
+);
 
 
 // ========================================
 // CONNEXION COUPLE
 // ========================================
 
-app.get('/connexion-couple', (req, res) => {
+app.get(
+  '/connexion-couple',
+  (req, res) => {
 
-  res.sendFile(
-    __dirname + '/public/connexion-couple.html'
-  );
-
-});
-
-
-app.post('/connexion-couple', async (req, res) => {
-
-  const email =
-    (req.body.email || '')
-      .trim()
-      .toLowerCase();
-
-  const password =
-    req.body.password || '';
-
-
-  const compte = comptes.find(
-    c => c.email.toLowerCase() === email
-  );
-
-
-  if (!compte) {
-
-    return res.send(`
-      <h1>Connexion impossible ❌</h1>
-
-      <p>
-        Email ou mot de passe incorrect.
-      </p>
-
-      <a href="/connexion-couple">
-        Réessayer
-      </a>
-    `);
-
-  }
-
-
-  const motDePasseCorrect =
-    await bcrypt.compare(
-      password,
-      compte.password
+    res.sendFile(
+      path.join(
+        __dirname,
+        'public',
+        'connexion-couple.html'
+      )
     );
 
+  }
+);
 
-  if (!motDePasseCorrect) {
 
-    return res.send(`
-      <h1>Connexion impossible ❌</h1>
+app.post(
+  '/connexion-couple',
+  async (req, res) => {
 
-      <p>
-        Email ou mot de passe incorrect.
-      </p>
+    const email =
+      (req.body.email || '')
+        .trim()
+        .toLowerCase();
 
-      <a href="/connexion-couple">
-        Réessayer
-      </a>
-    `);
+
+    const password =
+      req.body.password || '';
+
+
+    const compte =
+      comptes.find(
+        c =>
+          c.email.toLowerCase() === email
+      );
+
+
+    if (!compte) {
+
+      return res.send(`
+        <h1>
+          Connexion impossible ❌
+        </h1>
+
+        <p>
+          Email ou mot de passe incorrect.
+        </p>
+
+        <a href="/connexion-couple">
+          Réessayer
+        </a>
+      `);
+
+    }
+
+
+    const motDePasseCorrect =
+      await bcrypt.compare(
+        password,
+        compte.password
+      );
+
+
+    if (!motDePasseCorrect) {
+
+      return res.send(`
+        <h1>
+          Connexion impossible ❌
+        </h1>
+
+        <p>
+          Email ou mot de passe incorrect.
+        </p>
+
+        <a href="/connexion-couple">
+          Réessayer
+        </a>
+      `);
+
+    }
+
+
+    req.session.couple = true;
+    req.session.compteId = compte.id;
+
+
+    return res.redirect(
+      '/espace-couple'
+    );
 
   }
-
-
-  req.session.couple = true;
-  req.session.compteId = compte.id;
-
-  res.redirect('/espace-couple');
-
-});
+);
 
 
 // ========================================
@@ -688,14 +959,18 @@ app.get(
   verifierCouple,
   (req, res) => {
 
-    const compte = comptes.find(
-      c => c.id === req.session.compteId
-    );
+    const compte =
+      comptes.find(
+        c =>
+          c.id === req.session.compteId
+      );
 
 
     if (!compte) {
 
-      return res.redirect('/connexion-couple');
+      return res.redirect(
+        '/connexion-couple'
+      );
 
     }
 
@@ -705,9 +980,11 @@ app.get(
 
     if (compte.mariageId) {
 
-      const mariage = mariages.find(
-        m => m.id === compte.mariageId
-      );
+      const mariage =
+        mariages.find(
+          m =>
+            m.id === compte.mariageId
+        );
 
 
       if (mariage) {
@@ -736,15 +1013,18 @@ app.get(
               </strong>
             </p>
 
-            <a href="/${mariage.id}" style="
-              display:inline-block;
-              margin-top:15px;
-              background:#1F3A5F;
-              color:white;
-              padding:12px 20px;
-              border-radius:25px;
-              text-decoration:none;
-            ">
+            <a
+              href="/${mariage.id}"
+              style="
+                display:inline-block;
+                margin-top:15px;
+                background:#1F3A5F;
+                color:white;
+                padding:12px 20px;
+                border-radius:25px;
+                text-decoration:none;
+              "
+            >
               Voir mon mariage 💍
             </a>
 
@@ -757,7 +1037,7 @@ app.get(
     }
 
 
-    res.send(`
+    return res.send(`
 
       <!DOCTYPE html>
 
@@ -772,10 +1052,11 @@ app.get(
           content="width=device-width, initial-scale=1.0"
         >
 
-        <title>Mon espace mariage</title>
+        <title>
+          Mon espace mariage
+        </title>
 
       </head>
-
 
       <body style="
         margin:0;
@@ -788,7 +1069,6 @@ app.get(
         color:#1F3A5F;
       ">
 
-
         <div style="
           width:90%;
           max-width:500px;
@@ -799,11 +1079,9 @@ app.get(
           box-shadow:0 5px 25px rgba(0,0,0,0.08);
         ">
 
-
           <h1 style="color:#C78C9A;">
             Bienvenue ${compte.nom} 💍
           </h1>
-
 
           ${
             compte.mariageId
@@ -816,23 +1094,24 @@ app.get(
                 votre mariage.
               </p>
 
-              <a href="/creer-mariage" style="
-                display:inline-block;
-                margin-top:15px;
-                background:#1F3A5F;
-                color:white;
-                padding:15px 25px;
-                border-radius:30px;
-                text-decoration:none;
-              ">
+              <a
+                href="/creer-mariage"
+                style="
+                  display:inline-block;
+                  margin-top:15px;
+                  background:#1F3A5F;
+                  color:white;
+                  padding:15px 25px;
+                  border-radius:30px;
+                  text-decoration:none;
+                "
+              >
                 Créer mon mariage 💍
               </a>
             `
           }
 
-
           <br>
-
 
           <a
             href="/deconnexion-couple"
@@ -844,7 +1123,6 @@ app.get(
           >
             Se déconnecter
           </a>
-
 
         </div>
 
@@ -859,7 +1137,7 @@ app.get(
 
 
 // ========================================
-// FORMULAIRE CRÉATION MARIAGE COUPLE
+// FORMULAIRE CRÉATION MARIAGE
 // ========================================
 
 app.get(
@@ -882,10 +1160,11 @@ app.get(
           content="width=device-width, initial-scale=1.0"
         >
 
-        <title>Créer mon mariage 💍</title>
+        <title>
+          Créer mon mariage 💍
+        </title>
 
       </head>
-
 
       <body style="
         margin:0;
@@ -898,7 +1177,6 @@ app.get(
         color:#1F3A5F;
       ">
 
-
         <div style="
           width:90%;
           max-width:500px;
@@ -908,7 +1186,6 @@ app.get(
           box-shadow:0 5px 25px rgba(0,0,0,0.08);
         ">
 
-
           <h1 style="
             color:#C78C9A;
             text-align:center;
@@ -916,14 +1193,14 @@ app.get(
             Créer mon mariage 💍
           </h1>
 
-
           <form
             action="/api/couple/mariage"
             method="POST"
           >
 
-
-            <label>Prénoms des mariés</label>
+            <label>
+              Prénoms des mariés
+            </label>
 
             <input
               type="text"
@@ -940,8 +1217,9 @@ app.get(
               "
             >
 
-
-            <label>Identifiant du mariage</label>
+            <label>
+              Identifiant du mariage
+            </label>
 
             <input
               type="text"
@@ -958,8 +1236,9 @@ app.get(
               "
             >
 
-
-            <label>Date du mariage</label>
+            <label>
+              Date du mariage
+            </label>
 
             <input
               type="date"
@@ -975,8 +1254,9 @@ app.get(
               "
             >
 
-
-            <label>Heure</label>
+            <label>
+              Heure
+            </label>
 
             <input
               type="time"
@@ -991,8 +1271,9 @@ app.get(
               "
             >
 
-
-            <label>Mairie</label>
+            <label>
+              Mairie
+            </label>
 
             <input
               type="text"
@@ -1007,8 +1288,9 @@ app.get(
               "
             >
 
-
-            <label>Lieu de réception</label>
+            <label>
+              Lieu de réception
+            </label>
 
             <input
               type="text"
@@ -1023,8 +1305,9 @@ app.get(
               "
             >
 
-
-            <label>Couleur principale</label>
+            <label>
+              Couleur principale
+            </label>
 
             <input
               type="color"
@@ -1037,8 +1320,9 @@ app.get(
               "
             >
 
-
-            <label>Message d'accueil</label>
+            <label>
+              Message d'accueil
+            </label>
 
             <textarea
               name="message"
@@ -1053,7 +1337,6 @@ app.get(
                 border-radius:12px;
               "
             ></textarea>
-
 
             <button
               type="submit"
@@ -1070,9 +1353,7 @@ app.get(
               Créer mon mariage ❤️
             </button>
 
-
           </form>
-
 
         </div>
 
@@ -1095,26 +1376,28 @@ app.post(
   verifierCouple,
   (req, res) => {
 
-    const compte = comptes.find(
-      c => c.id === req.session.compteId
-    );
+    const compte =
+      comptes.find(
+        c =>
+          c.id === req.session.compteId
+      );
 
 
     if (!compte) {
 
       return res.status(401).send(
-        "Compte introuvable."
+        'Compte introuvable.'
       );
 
     }
 
 
-    // Un compte ne peut créer qu'un mariage
-
     if (compte.mariageId) {
 
       return res.send(`
-        <h1>Vous avez déjà un mariage ❌</h1>
+        <h1>
+          Vous avez déjà un mariage ❌
+        </h1>
 
         <a href="/espace-couple">
           Retour à mon espace
@@ -1134,24 +1417,31 @@ app.post(
     if (!id) {
 
       return res.send(`
-        <h1>Identifiant invalide ❌</h1>
-        <a href="/creer-mariage">Réessayer</a>
+        <h1>
+          Identifiant invalide ❌
+        </h1>
+
+        <a href="/creer-mariage">
+          Réessayer
+        </a>
       `);
 
     }
 
 
-    // Vérification que l'identifiant n'existe pas déjà
-
-    const idExiste = mariages.find(
-      mariage => mariage.id === id
-    );
+    const idExiste =
+      mariages.find(
+        mariage =>
+          mariage.id === id
+      );
 
 
     if (idExiste) {
 
       return res.send(`
-        <h1>Cet identifiant existe déjà ❌</h1>
+        <h1>
+          Cet identifiant existe déjà ❌
+        </h1>
 
         <p>
           Choisissez un autre identifiant.
@@ -1165,9 +1455,10 @@ app.post(
     }
 
 
-    // Création automatique du code invité
+    // Génération automatique du code invité
 
     let codeInvite;
+
 
     do {
 
@@ -1187,7 +1478,8 @@ app.post(
 
     const nouveauMariage = {
 
-      id: id,
+      id:
+        id,
 
       prenoms:
         req.body.prenoms,
@@ -1196,19 +1488,19 @@ app.post(
         req.body.date,
 
       heure:
-        req.body.heure || "",
+        req.body.heure || '',
 
       mairie:
-        req.body.mairie || "",
+        req.body.mairie || '',
 
       lieu:
-        req.body.lieu || "",
+        req.body.lieu || '',
 
       couleur:
-        req.body.couleur || "#1F3A5F",
+        req.body.couleur || '#1F3A5F',
 
       message:
-        req.body.message || "",
+        req.body.message || '',
 
       codeInvite:
         codeInvite
@@ -1216,34 +1508,44 @@ app.post(
     };
 
 
-    // Ajout du mariage
+    mariages.push(
+      nouveauMariage
+    );
 
-    mariages.push(nouveauMariage);
-
-
-    // Association au compte
 
     compte.mariageId =
       nouveauMariage.id;
 
 
-    // Sauvegarde des mariages
-
     fs.writeFileSync(
-      './config/mariages.json',
-      JSON.stringify(mariages, null, 2)
+      path.join(
+        __dirname,
+        'config',
+        'mariages.json'
+      ),
+      JSON.stringify(
+        mariages,
+        null,
+        2
+      )
     );
 
 
-    // Sauvegarde des comptes
-
     fs.writeFileSync(
-      './config/comptes.json',
-      JSON.stringify(comptes, null, 2)
+      path.join(
+        __dirname,
+        'config',
+        'comptes.json'
+      ),
+      JSON.stringify(
+        comptes,
+        null,
+        2
+      )
     );
 
 
-    res.send(`
+    return res.send(`
 
       <!DOCTYPE html>
 
@@ -1258,10 +1560,11 @@ app.post(
           content="width=device-width, initial-scale=1.0"
         >
 
-        <title>Mariage créé ❤️</title>
+        <title>
+          Mariage créé ❤️
+        </title>
 
       </head>
-
 
       <body style="
         margin:0;
@@ -1274,7 +1577,6 @@ app.post(
         color:#1F3A5F;
       ">
 
-
         <div style="
           width:90%;
           max-width:500px;
@@ -1285,21 +1587,17 @@ app.post(
           box-shadow:0 5px 25px rgba(0,0,0,0.08);
         ">
 
-
           <h1 style="color:#C78C9A;">
             Votre mariage est créé 💍
           </h1>
-
 
           <p>
             ${nouveauMariage.prenoms}
           </p>
 
-
           <p>
             Votre code invité :
           </p>
-
 
           <h2 style="
             letter-spacing:3px;
@@ -1308,18 +1606,15 @@ app.post(
             ${nouveauMariage.codeInvite}
           </h2>
 
-
           <p>
             Lien de votre album :
           </p>
-
 
           <p>
             <strong>
               ${req.protocol}://${req.get('host')}/${nouveauMariage.id}
             </strong>
           </p>
-
 
           <a
             href="/espace-couple"
@@ -1335,7 +1630,6 @@ app.post(
           >
             Retour à mon espace ❤️
           </a>
-
 
         </div>
 
@@ -1353,47 +1647,79 @@ app.post(
 // DÉCONNEXION COUPLE
 // ========================================
 
-app.get('/deconnexion-couple', (req, res) => {
+app.get(
+  '/deconnexion-couple',
+  (req, res) => {
 
-  req.session.couple = false;
-  req.session.compteId = null;
+    req.session.couple = false;
+    req.session.compteId = null;
 
-  res.redirect('/connexion-couple');
+    return res.redirect(
+      '/connexion-couple'
+    );
 
-});
+  }
+);
 
 
 // ========================================
 // CONNEXION ADMIN
 // ========================================
 
-app.get('/login', (req, res) => {
+app.get(
+  '/login',
+  (req, res) => {
 
-  res.sendFile(
-    __dirname + '/public/login.html'
-  );
+    res.sendFile(
+      path.join(
+        __dirname,
+        'public',
+        'login.html'
+      )
+    );
 
-});
+  }
+);
 
 
-app.post('/login', (req, res) => {
+app.post(
+  '/login',
+  (req, res) => {
 
-  const { username, password } = req.body;
+    const username =
+      req.body.username || '';
+
+    const password =
+      req.body.password || '';
 
 
-  if (
-    username === "admin" &&
-    password === "tonmotdepasse"
-  ) {
+    const adminUsername =
+      process.env.ADMIN_USERNAME ||
+      'admin';
 
-    req.session.admin = true;
+    const adminPassword =
+      process.env.ADMIN_PASSWORD ||
+      'tonmotdepasse';
 
-    res.redirect('/admin');
 
-  } else {
+    if (
+      username === adminUsername &&
+      password === adminPassword
+    ) {
 
-    res.send(`
-      <h1>Identifiants incorrects ❌</h1>
+      req.session.admin = true;
+
+      return res.redirect(
+        '/admin'
+      );
+
+    }
+
+
+    return res.send(`
+      <h1>
+        Identifiants incorrects ❌
+      </h1>
 
       <a href="/login">
         Réessayer
@@ -1401,37 +1727,44 @@ app.post('/login', (req, res) => {
     `);
 
   }
-
-});
+);
 
 
 // ========================================
 // DÉCONNEXION ADMIN
 // ========================================
 
-app.get('/logout', (req, res) => {
+app.get(
+  '/logout',
+  (req, res) => {
 
-  req.session.destroy(() => {
+    req.session.destroy(() => {
 
-    res.redirect('/login');
+      res.redirect('/login');
 
-  });
+    });
 
-});
+  }
+);
 
 
 // ========================================
 // DÉCONNEXION INVITÉ
 // ========================================
 
-app.get('/deconnexion-invite', (req, res) => {
+app.get(
+  '/deconnexion-invite',
+  (req, res) => {
 
-  req.session.invite = false;
-  req.session.mariage = null;
+    req.session.invite = false;
+    req.session.mariage = null;
 
-  res.redirect('/connexion');
+    return res.redirect(
+      '/connexion'
+    );
 
-});
+  }
+);
 
 
 // ========================================
@@ -1444,7 +1777,11 @@ app.get(
   (req, res) => {
 
     res.sendFile(
-      __dirname + '/public/admin.html'
+      path.join(
+        __dirname,
+        'public',
+        'admin.html'
+      )
     );
 
   }
@@ -1462,41 +1799,90 @@ app.post(
 
     const nouveauMariage = {
 
-      id: req.body.id,
+      id:
+        (req.body.id || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '-'),
 
-      prenoms: req.body.prenoms,
+      prenoms:
+        req.body.prenoms,
 
-      date: req.body.date,
+      date:
+        req.body.date,
 
-      heure: req.body.heure,
+      heure:
+        req.body.heure || '',
 
-      mairie: req.body.mairie,
+      mairie:
+        req.body.mairie || '',
 
-      lieu: req.body.lieu,
+      lieu:
+        req.body.lieu || '',
 
-      couleur: req.body.couleur,
+      couleur:
+        req.body.couleur || '#1F3A5F',
 
-      message: req.body.message,
+      message:
+        req.body.message || '',
 
       codeInvite:
-        req.body.codeInvite || null
+        req.body.codeInvite ||
+        null
 
     };
 
 
-    mariages.push(nouveauMariage);
+    if (!nouveauMariage.id) {
+
+      return res.status(400).json({
+        erreur:
+          'Identifiant du mariage obligatoire.'
+      });
+
+    }
 
 
-    fs.writeFileSync(
-      './config/mariages.json',
-      JSON.stringify(mariages, null, 2)
+    const existe =
+      mariages.find(
+        m =>
+          m.id === nouveauMariage.id
+      );
+
+
+    if (existe) {
+
+      return res.status(400).json({
+        erreur:
+          'Cet identifiant existe déjà.'
+      });
+
+    }
+
+
+    mariages.push(
+      nouveauMariage
     );
 
 
-    res.json({
+    fs.writeFileSync(
+      path.join(
+        __dirname,
+        'config',
+        'mariages.json'
+      ),
+      JSON.stringify(
+        mariages,
+        null,
+        2
+      )
+    );
+
+
+    return res.json({
 
       message:
-        "Mariage créé avec succès 💍",
+        'Mariage créé avec succès 💍',
 
       lien:
         `/${nouveauMariage.id}`,
@@ -1508,13 +1894,6 @@ app.post(
 
   }
 );
-// ========================================
-// PAGE D'ACCUEIL
-// ========================================
-
-app.get('/', (req, res) => {
-  res.redirect('/connexion');
-});
 
 
 // ========================================
@@ -1526,8 +1905,28 @@ app.get(
   verifierInvite,
   (req, res) => {
 
-    res.sendFile(
-      __dirname + '/public/index.html'
+    const mariage =
+      mariages.find(
+        m =>
+          m.id === req.params.mariage
+      );
+
+
+    if (!mariage) {
+
+      return res.status(404).send(
+        'Mariage introuvable.'
+      );
+
+    }
+
+
+    return res.sendFile(
+      path.join(
+        __dirname,
+        'public',
+        'index.html'
+      )
     );
 
   }
@@ -1538,13 +1937,13 @@ app.get(
 // DÉMARRAGE
 // ========================================
 
-const PORT =
-  process.env.PORT || 3000;
+app.listen(
+  PORT,
+  () => {
 
-app.listen(PORT, () => {
+    console.log(
+      `Serveur lancé sur le port ${PORT}`
+    );
 
-  console.log(
-    `Serveur lancé sur le port ${PORT}`
-  );
-
-});
+  }
+);
