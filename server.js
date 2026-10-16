@@ -162,7 +162,7 @@ function verifierCouple(req, res, next) {
 
 app.get('/', (req, res) => {
 
-  res.redirect('/connexion');
+  res.redirect('/elodie-emilie');
 
 });
 
