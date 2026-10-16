@@ -82,29 +82,28 @@ cloudinary.config({
 // ========================================
 // MIDDLEWARE INVITÉ
 // ========================================
-
 function verifierInvite(req, res, next) {
+  const mariageId = req.params.mariage || req.params.id;
 
-  const mariageId =
-    req.params.mariage ||
-    req.params.id;
+  const mariage = mariages.find(
+    m => m.id === mariageId
+  );
 
-  if (
-    req.session.invite &&
-    req.session.mariage === mariageId
-  ) {
-    return next();
+  if (!mariage) {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({
+        erreur: 'Mariage introuvable'
+      });
+    }
+
+    return res.status(404).send('Mariage introuvable.');
   }
 
-  if (req.path.startsWith('/api/')) {
-    return res.status(401).json({
-      erreur: 'Connexion invité nécessaire'
-    });
-  }
+  req.session.invite = true;
+  req.session.mariage = mariage.id;
 
-  return res.redirect('/connexion');
+  return next();
 }
-
 
 // ========================================
 // MIDDLEWARE INVITÉ POUR UPLOAD
